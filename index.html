@@ -2,180 +2,52 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dashboards</title>
-<style>
-  :root { --bg: #f4f5f7; --card: #ffffff; --ink: #1f2937; --muted: #6b7280; --accent: #0f766e; --line: #e5e7eb; }
-  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
-               font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
-  .wrap { position: fixed; inset: 0; display: flex; flex-direction: column; }
-  iframe { flex: 1; width: 100%; border: 0; background: #fff; }
-  .note { font-size: 11px; color: var(--muted); padding: 4px 12px; text-align: right; }
-  .menu { max-width: 720px; margin: 0 auto; padding: 48px 16px; }
-  .menu h1 { font-size: 22px; margin: 0 0 6px; }
-  .menu p { color: var(--muted); margin: 0 0 24px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
-  .card { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 12px;
-          padding: 20px; text-decoration: none; color: inherit; transition: border-color .15s, transform .15s; }
-  .card:hover { border-color: var(--accent); transform: translateY(-2px); }
-  .card strong { display: block; font-size: 16px; margin-bottom: 4px; }
-  .card span { color: var(--accent); font-size: 13px; }
-  .hidden { display: none !important; }
-</style>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sales &amp; Incentive Dashboards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/portal.css">
+<script src="assets/config.js"></script>
+<script>
+  // Old ?r= links: send to the new short link, or to this menu if that dashboard was retired
+  (function () {
+    var p = new URLSearchParams(location.search), r = p.get("r");
+    if (!r) return;
+    p.delete("r");
+    var rest = p.toString();
+    if (window.PORTAL.REPORTS[r]) location.replace(r + "/" + (rest ? "?" + rest : ""));
+    else history.replaceState(null, "", location.pathname + (rest ? "?" + rest : ""));
+  })();
+</script>
 </head>
 <body>
-
-<!-- Shown when no dashboard is chosen -->
-<div id="menu" class="menu hidden">
-  <h1>Dashboards</h1>
-  <p>Choose a dashboard to open.</p>
-  <div class="grid" id="grid"></div>
-</div>
-
-<!-- Shown when a dashboard is chosen -->
-<div id="viewer" class="wrap hidden">
-  <iframe id="report" title="Power BI report" allowfullscreen></iframe>
-  <div class="note">Anonymous usage statistics (visits and time on page) are collected to improve this report. No names or IP addresses are stored.</div>
-</div>
-
+<main class="menu">
+  <div class="brand"><span class="dot"></span>Sales &amp; Marketing</div>
+  <h1>Sales &amp; incentive dashboards</h1>
+  <p class="lede">Open your team's dashboard to see sales performance and incentive progress.</p>
+  <ul class="list" id="list"></ul>
+  <p class="foot">Anonymous usage statistics (visits and time on page) are collected to improve these dashboards. No names or IP addresses are stored.</p>
+</main>
 <script>
-/* =========================================================
-   CONFIG
-   ========================================================= */
-const CONFIG = {
-  SUPABASE_URL: "https://slygodiwvaaqxtwekupi.supabase.co",
-  SUPABASE_KEY: "sb_publishable_p7aJfsR1f8PO1YDcpt7aqw_n55TljCG",   // public key, safe in the browser
-  // Open a dashboard with ?r=<key>, e.g. ?r=sales
-  REPORTS: {
-    sales: {
-      title: "Sales Dashboard",
-      url: "https://app.powerbi.com/view?r=eyJrIjoiMzVhODY2NDAtNWI3Zi00YzUyLWIzYWYtZjJlMjI0M2FiNjIyIiwidCI6ImVkY2YyOTM1LTE4ZDQtNDg1Ni1iM2Q3LWEzMjEyM2JhZjgwOCIsImMiOjh9"
-    },
-    noiva: {
-      title: "Noiva Dashboard",
-      url: "https://app.powerbi.com/view?r=eyJrIjoiZWFiOTYxNGMtZjA3Zi00N2FkLThmZTktMWZmYWE5NjdmODhhIiwidCI6ImVkY2YyOTM1LTE4ZDQtNDg1Ni1iM2Q3LWEzMjEyM2JhZjgwOCIsImMiOjh9"
-    }
-  },
-  HEARTBEAT_SECONDS: 15
-};
-
-/* =========================================================
-   PAGE + TRACKER: no need to edit below
-   ========================================================= */
-(function () {
-  const params = new URLSearchParams(location.search);
-  const reportKey = params.get("r");
-  const report = reportKey && CONFIG.REPORTS[reportKey];
-
-  // Owner opt-out: open once with ?notrack=1 (or ?notrack=0 to re-enable)
-  let noTrack = false;
-  try {
-    if (params.get("notrack") === "1") localStorage.setItem("pbi_notrack", "1");
-    if (params.get("notrack") === "0") localStorage.removeItem("pbi_notrack");
-    noTrack = localStorage.getItem("pbi_notrack") === "1";
-  } catch (e) { /* storage blocked: keep tracking */ }
-
-  // No dashboard chosen: show the menu (menu views are not tracked)
-  if (!report) {
-    const grid = document.getElementById("grid");
-    const src = params.get("src");
-    Object.keys(CONFIG.REPORTS).forEach(key => {
-      const q = new URLSearchParams({ r: key });
-      if (src) q.set("src", src);
-      const a = document.createElement("a");
-      a.className = "card";
-      a.href = "?" + q.toString();
-      a.innerHTML = "<strong></strong><span>Open dashboard</span>";
-      a.querySelector("strong").textContent = CONFIG.REPORTS[key].title;
-      grid.appendChild(a);
-    });
-    document.getElementById("menu").classList.remove("hidden");
-    return;
-  }
-
-  document.title = report.title;
-  const iframe = document.getElementById("report");
-  iframe.src = report.url;
-  document.getElementById("viewer").classList.remove("hidden");
-
-  if (noTrack || CONFIG.SUPABASE_URL.indexOf("YOUR-PROJECT") !== -1) return;
-
-  function uuid() {
-    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
-    return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
-      (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16));
-  }
-
-  // Anonymous returning-visitor ID
-  let visitorId;
-  try {
-    visitorId = localStorage.getItem("pbi_vid");
-    if (!visitorId) { visitorId = uuid(); localStorage.setItem("pbi_vid", visitorId); }
-  } catch (e) { visitorId = uuid(); }
-
-  const sessionId = uuid();
-  const ua = navigator.userAgent;
-  const device = /iPad|Tablet/i.test(ua) ? "tablet" : /Mobi|Android|iPhone/i.test(ua) ? "mobile" : "desktop";
-
-  function rpc(fn, body, keepalive) {
-    return fetch(CONFIG.SUPABASE_URL + "/rest/v1/rpc/" + fn, {
-      method: "POST",
-      keepalive: !!keepalive,
-      headers: { "Content-Type": "application/json", "apikey": CONFIG.SUPABASE_KEY },
-      body: JSON.stringify(body)
-    }).catch(() => {});
-  }
-
-  // 1) Log the visit
-  rpc("track_start", {
-    p_session_id: sessionId,
-    p_visitor_id: visitorId,
-    p_report_key: reportKey,
-    p_src: params.get("src"),
-    p_referrer: document.referrer || null,
-    p_device: device,
-    p_screen: screen.width + "x" + screen.height,
-    p_language: navigator.language || null,
-    p_timezone: (Intl.DateTimeFormat().resolvedOptions().timeZone) || null,
-    p_user_agent: ua
-  });
-
-  // 2) Count active time (only while the tab is visible)
-  let activeSince = document.visibilityState === "visible" ? Date.now() : null;
-  let pendingMs = 0;
-  let engaged = false;
-  let engagedSent = false;
-
-  function flush(final) {
-    const now = Date.now();
-    if (activeSince !== null) {
-      pendingMs += now - activeSince;
-      activeSince = (!final && document.visibilityState === "visible") ? now : null;
-    }
-    const secs = Math.floor(pendingMs / 1000);
-    const sendEngaged = engaged && !engagedSent;
-    if (secs <= 0 && !sendEngaged) return;
-    pendingMs -= secs * 1000;
-    if (sendEngaged) engagedSent = true;
-    rpc("track_ping", { p_session_id: sessionId, p_active_delta: secs, p_engaged: sendEngaged }, true);
-  }
-
-  setInterval(() => { if (document.visibilityState === "visible") flush(false); },
-              CONFIG.HEARTBEAT_SECONDS * 1000);
-
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") flush(false);
-    else activeSince = Date.now();
-  });
-  window.addEventListener("pagehide", () => flush(true));
-
-  // 3) Detect a click into the report (focus moves into the iframe)
-  window.addEventListener("blur", () => {
-    setTimeout(() => {
-      if (document.activeElement === iframe && !engaged) { engaged = true; flush(false); }
-    }, 0);
-  });
-})();
+  (function () {
+    var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
+    var p = new URLSearchParams(location.search);
+    try {
+      if (p.get("notrack") === "1") localStorage.setItem("pbi_notrack", "1");
+      if (p.get("notrack") === "0") localStorage.removeItem("pbi_notrack");
+    } catch (e) {}
+    var src = p.get("src");
+    var R = window.PORTAL.REPORTS, keys = Object.keys(R);
+    document.getElementById("list").innerHTML = keys.map(function (k, i) {
+      var r = R[k];
+      return '<li><a href="' + esc(k) + '/' + (src ? "?src=" + encodeURIComponent(src) : "") + '"' + (i === 0 ? ' class="featured"' : "") + '>' +
+        '<span class="tile">' + esc(r.title.charAt(0)) + '</span>' +
+        '<span class="txt"><span class="name">' + esc(r.title) + '</span><span class="team">' + esc(r.team) + '</span></span>' +
+        '<svg class="go" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>' +
+        '</a></li>';
+    }).join("");
+  })();
 </script>
 </body>
 </html>
