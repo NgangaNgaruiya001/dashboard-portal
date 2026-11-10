@@ -19,6 +19,8 @@ Not tracked: clicks inside the report (slicers, page tabs). Publish to Web block
 |---|---|
 | `index.html` | The page people open. Shows the report and sends tracking data |
 | `schema.sql` | Supabase table, tracking functions, reporting views, read-only Power BI login |
+| `stats.html` | PIN-protected page showing views and time spent |
+| `stats.sql` | Supabase setup for the stats page (PIN and summary function) |
 
 ## Live links
 
@@ -32,6 +34,19 @@ Add `&src=<channel>` to see where views come from, e.g.
 `https://ngangangaruiya001.github.io/dashboard-portal/?r=sales&src=whatsapp`
 
 Open `https://ngangangaruiya001.github.io/dashboard-portal/?notrack=1` once on each of your own devices so your visits are not counted.
+
+## Stats page
+
+See views and time spent at:
+https://ngangangaruiya001.github.io/dashboard-portal/stats.html
+
+It is PIN protected and not linked from the public menu.
+
+To set it up, run `stats.sql` in the Supabase SQL Editor after changing the PIN on its last line (8+ characters). To change the PIN later, run:
+```sql
+select public.set_stats_pin('YourNewPin');
+```
+After 10 wrong PIN attempts the page locks for 10 minutes.
 
 ## Setup
 

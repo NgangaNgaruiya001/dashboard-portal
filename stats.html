@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Dashboard Usage</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f4f4f2;
+    --surface: #fcfcfb;
+    --line: #e4e3df;
+    --grid: #ecebe7;
+    --text: #0b0b0b;
+    --text-2: #52514e;
+    --text-3: #7a7974;
+    --series: #2a78d6;
+    --series-soft: #d6e5f7;
+    --danger: #c0392b;
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --bg: #121211;
+      --surface: #1a1a19;
+      --line: #2c2c2a;
+      --grid: #262624;
+      --text: #f0efec;
+      --text-2: #c3c2b7;
+      --text-3: #8f8e86;
+      --series: #3987e5;
+      --series-soft: #1f3550;
+      --danger: #e66767;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #121211; --surface: #1a1a19; --line: #2c2c2a; --grid: #262624;
+    --text: #f0efec; --text-2: #c3c2b7; --text-3: #8f8e86;
+    --series: #3987e5; --series-soft: #1f3550; --danger: #e66767;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+               font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { padding: 0 16px 40px; }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  .hidden { display: none !important; }
+  button, select, input { font: inherit; color: inherit; }
+
+  /* Lock screen */
+  .lock { min-height: 100vh; display: grid; place-items: center; }
+  .lock-card { width: 100%; max-width: 360px; background: var(--surface); border: 1px solid var(--line);
+               border-radius: var(--radius); padding: 28px 22px; }
+  .lock-card h1 { font-size: 20px; margin: 0 0 6px; }
+  .lock-card p { color: var(--text-2); margin: 0 0 18px; font-size: 14px; }
+  .lock-card input { width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px;
+                     background: var(--bg); font-size: 16px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+         padding: 11px 16px; border-radius: 10px; border: 1px solid var(--line);
+         background: var(--surface); cursor: pointer; font-size: 14px; }
+  .btn-primary { background: var(--series); border-color: var(--series); color: #fff; width: 100%; margin-top: 12px; font-weight: 600; }
+  .err { color: var(--danger); font-size: 13px; min-height: 18px; margin-top: 10px; }
+
+  /* Header */
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 0 14px; }
+  header h1 { font-size: 20px; margin: 0; }
+  .updated { color: var(--text-3); font-size: 12px; margin-top: 2px; }
+  .hdr-actions { display: flex; gap: 8px; }
+  .icon-btn { width: 40px; height: 40px; padding: 0; border-radius: 10px; }
+  .icon-btn svg { width: 18px; height: 18px; stroke: var(--text-2); }
+  .spin svg { animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Filters */
+  .filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+  .seg { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+  .seg button { border: 0; background: transparent; padding: 7px 12px; border-radius: 7px; cursor: pointer;
+                font-size: 13px; color: var(--text-2); }
+  .seg button[aria-pressed="true"] { background: var(--series); color: #fff; font-weight: 600; }
+  .filters select { padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
+                    font-size: 13px; min-width: 150px; }
+
+  /* KPI tiles */
+  .kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
+  @media (min-width: 720px) { .kpis { grid-template-columns: repeat(4, 1fr); } }
+  .kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; }
+  .kpi .label { font-size: 12px; color: var(--text-2); }
+  .kpi .value { font-size: 26px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
+  .kpi .sub { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+
+  /* Cards */
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+          padding: 16px; margin-bottom: 12px; }
+  .card h2 { font-size: 15px; margin: 0 0 2px; }
+  .card .hint { font-size: 12px; color: var(--text-3); margin: 0 0 12px; }
+  .two { display: grid; gap: 12px; }
+  @media (min-width: 720px) { .two { grid-template-columns: 1fr 1fr; } .two .card { margin-bottom: 0; } .two { margin-bottom: 12px; } }
+
+  /* Chart */
+  .chart { position: relative; }
+  .chart svg { display: block; width: 100%; overflow: visible; }
+  .chart .axis { fill: var(--text-3); font-size: 11px; }
+  .tip { position: absolute; pointer-events: none; background: var(--text); color: var(--surface);
+         font-size: 12px; padding: 7px 9px; border-radius: 8px; white-space: nowrap; transform: translate(-50%, -100%);
+         line-height: 1.4; z-index: 2; }
+  .empty { color: var(--text-3); font-size: 13px; padding: 24px 0; text-align: center; }
+
+  /* Tables and bar lists */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--text-3); font-weight: 500; font-size: 12px; padding: 6px 4px; border-bottom: 1px solid var(--line); }
+  td { padding: 10px 4px; border-bottom: 1px solid var(--grid); font-variant-numeric: tabular-nums; }
+  tr:last-child td { border-bottom: 0; }
+  .num { text-align: right; }
+  .bars { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 13px; }
+  .bar-row .track { grid-column: 1 / -1; height: 8px; background: var(--grid); border-radius: 4px; overflow: hidden; }
+  .bar-row .fill { height: 100%; background: var(--series); border-radius: 4px; }
+  .bar-row .cnt { color: var(--text-2); font-variant-numeric: tabular-nums; }
+
+  .recent { list-style: none; margin: 0; padding: 0; }
+  .recent li { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 10px 0; border-bottom: 1px solid var(--grid); font-size: 13px; }
+  .recent li:last-child { border-bottom: 0; }
+  .recent .meta { color: var(--text-3); font-size: 12px; }
+  .recent .dur { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px; background: var(--series-soft); color: var(--text); margin-left: 6px; }
+  .foot { text-align: center; color: var(--text-3); font-size: 12px; margin-top: 18px; }
+  .foot a { color: var(--text-2); }
+</style>
+</head>
+<body>
+
+<!-- LOCK SCREEN -->
+<div id="lock" class="lock hidden">
+  <form class="lock-card" id="pinForm" autocomplete="off">
+    <h1>Dashboard Usage</h1>
+    <p>Enter your stats PIN to see views and time spent.</p>
+    <input id="pin" type="password" inputmode="text" placeholder="Stats PIN" aria-label="Stats PIN" required>
+    <button class="btn btn-primary" type="submit" id="pinBtn">Open stats</button>
+    <div class="err" id="pinErr" role="alert"></div>
+  </form>
+</div>
+
+<!-- STATS -->
+<div id="app" class="wrap hidden">
+  <header>
+    <div>
+      <h1>Dashboard Usage</h1>
+      <div class="updated" id="updated">Loading…</div>
+    </div>
+    <div class="hdr-actions">
+      <button class="btn icon-btn" id="refreshBtn" title="Refresh" aria-label="Refresh">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+      </button>
+      <button class="btn icon-btn" id="lockBtn" title="Lock" aria-label="Lock">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="filters">
+    <div class="seg" id="range" role="group" aria-label="Date range">
+      <button data-days="7">7D</button>
+      <button data-days="30" aria-pressed="true">30D</button>
+      <button data-days="90">90D</button>
+      <button data-days="0">All</button>
+    </div>
+    <select id="report" aria-label="Dashboard"><option value="">All dashboards</option></select>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="label">Views</div><div class="value" id="kViews">-</div><div class="sub" id="kViewsSub">&nbsp;</div></div>
+    <div class="kpi"><div class="label">Unique visitors</div><div class="value" id="kVisitors">-</div><div class="sub" id="kVisitorsSub">&nbsp;</div></div>
+    <div class="kpi"><div class="label">Avg time per view</div><div class="value" id="kAvg">-</div><div class="sub" id="kAvgSub">&nbsp;</div></div>
+    <div class="kpi"><div class="label">Total time</div><div class="value" id="kTotal">-</div><div class="sub" id="kTotalSub">&nbsp;</div></div>
+  </div>
+
+  <section class="card">
+    <h2>Views per day</h2>
+    <p class="hint">Tap a bar for details</p>
+    <div class="chart" id="chart"></div>
+  </section>
+
+  <section class="card">
+    <h2>By dashboard</h2>
+    <p class="hint">Time counts only while the dashboard is open on screen</p>
+    <div id="byReport"></div>
+  </section>
+
+  <div class="two">
+    <section class="card">
+      <h2>Where views come from</h2>
+      <p class="hint">From the &amp;src= tag on shared links</p>
+      <div class="bars" id="bySrc"></div>
+    </section>
+    <section class="card">
+      <h2>Devices</h2>
+      <p class="hint">Phone, tablet or computer</p>
+      <div class="bars" id="byDevice"></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Recent visits</h2>
+    <p class="hint">Last 25 in this range</p>
+    <ul class="recent" id="recent"></ul>
+  </section>
+
+  <div class="foot"><a href="./">Open dashboards</a></div>
+</div>
+
+<script>
+const CONFIG = {
+  SUPABASE_URL: "https://slygodiwvaaqxtwekupi.supabase.co",
+  SUPABASE_KEY: "sb_publishable_p7aJfsR1f8PO1YDcpt7aqw_n55TljCG",
+  TITLES: { sales: "Sales Dashboard", noiva: "Noiva Dashboard" }
+};
+
+(function () {
+  const $ = id => document.getElementById(id);
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+    del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+  };
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const title = k => CONFIG.TITLES[k] || k;
+  const nf = n => Number(n || 0).toLocaleString("en-KE");
+  function dur(sec) {
+    sec = Math.round(sec || 0);
+    if (sec < 60) return sec + "s";
+    if (sec < 3600) { const m = Math.floor(sec / 60), s = sec % 60; return m + "m" + (s ? " " + s + "s" : ""); }
+    const h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60); return h + "h" + (m ? " " + m + "m" : "");
+  }
+  const pct = (a, b) => b ? Math.round(100 * a / b) + "%" : "0%";
+  const dayLabel = iso => new Date(iso + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  const shortDay = iso => new Date(iso + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+
+  let pin = store.get("pbi_stats_pin");
+  let days = 30, report = "", lastData = null;
+
+  async function fetchStats() {
+    const res = await fetch(CONFIG.SUPABASE_URL + "/rest/v1/rpc/get_usage_stats", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "apikey": CONFIG.SUPABASE_KEY },
+      body: JSON.stringify({ p_pin: pin, p_days: days, p_report: report || null })
+    });
+    if (!res.ok) throw new Error("Server error (" + res.status + "). Has stats.sql been run in Supabase?");
+    return res.json();
+  }
+
+  function showLock(msg) {
+    $("app").classList.add("hidden");
+    $("lock").classList.remove("hidden");
+    $("pinErr").textContent = msg || "";
+    $("pin").value = "";
+    setTimeout(() => $("pin").focus(), 50);
+  }
+
+  async function load() {
+    $("refreshBtn").classList.add("spin");
+    try {
+      const data = await fetchStats();
+      if (!data.ok) {
+        if (/PIN|attempts/i.test(data.error)) { store.del("pbi_stats_pin"); pin = null; }
+        showLock(data.error);
+        return false;
+      }
+      lastData = data;
+      $("lock").classList.add("hidden");
+      $("app").classList.remove("hidden");
+      render(data);
+      return true;
+    } catch (e) {
+      if ($("app").classList.contains("hidden")) showLock(e.message);
+      else $("updated").textContent = e.message;
+      return false;
+    } finally {
+      $("refreshBtn").classList.remove("spin");
+    }
+  }
+
+  function render(d) {
+    // Report filter options (keep selection)
+    const sel = $("report");
+    const keys = d.reports || [];
+    const have = Array.from(sel.options).map(o => o.value);
+    if (keys.some(k => have.indexOf(k) === -1)) {
+      sel.innerHTML = '<option value="">All dashboards</option>' +
+        keys.map(k => '<option value="' + esc(k) + '">' + esc(title(k)) + "</option>").join("");
+      sel.value = report;
+    }
+
+    const t = d.totals;
+    $("updated").textContent = "Updated " + new Date(d.generated_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) +
+      (d.from ? " · " + shortDay(d.from) + " to " + shortDay(d.to) : " · All time");
+    $("kViews").textContent = nf(t.views);
+    $("kViewsSub").textContent = pct(t.engaged, t.views) + " clicked into the report";
+    $("kVisitors").textContent = nf(t.unique_visitors);
+    $("kVisitorsSub").textContent = t.unique_visitors ? (t.views / t.unique_visitors).toFixed(1) + " views per visitor" : " ";
+    $("kAvg").textContent = dur(t.avg_seconds);
+    $("kAvgSub").textContent = "Median " + dur(t.median_seconds);
+    $("kTotal").textContent = dur(t.total_seconds);
+    $("kTotalSub").textContent = pct(t.bounces, t.views) + " left within 10s";
+
+    renderChart(d);
+
+    // By dashboard
+    const br = d.by_report || [];
+    $("byReport").innerHTML = br.length ?
+      '<table><thead><tr><th>Dashboard</th><th class="num">Views</th><th class="num">Visitors</th><th class="num">Avg time</th><th class="num">Total</th></tr></thead><tbody>' +
+      br.map(r => "<tr><td>" + esc(title(r.report_key)) + '</td><td class="num">' + nf(r.views) + '</td><td class="num">' + nf(r.unique_visitors) +
+        '</td><td class="num">' + dur(r.avg_seconds) + '</td><td class="num">' + dur(r.total_seconds) + "</td></tr>").join("") +
+      "</tbody></table>" : '<div class="empty">No views in this range yet</div>';
+
+    barList("bySrc", d.by_src);
+    barList("byDevice", d.by_device);
+
+    // Recent
+    const rc = d.recent || [];
+    $("recent").innerHTML = rc.length ? rc.map(r => {
+      const when = new Date(r.started_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+      return "<li><div>" + esc(title(r.report_key)) + '<span class="tag">' + esc(r.src) + '</span></div><div class="dur">' + dur(r.active_seconds) +
+        '</div><div class="meta">' + esc(when) + " · " + esc(r.device || "unknown") + (r.engaged ? " · clicked in" : "") + "</div><div></div></li>";
+    }).join("") : '<div class="empty">No visits yet</div>';
+  }
+
+  function barList(id, rows) {
+    rows = rows || [];
+    const max = Math.max(1, ...rows.map(r => r.views));
+    $(id).innerHTML = rows.length ? rows.slice(0, 8).map(r =>
+      '<div class="bar-row"><span>' + esc(r.label) + '</span><span class="cnt">' + nf(r.views) +
+      '</span><div class="track"><div class="fill" style="width:' + Math.max(2, 100 * r.views / max) + '%"></div></div></div>'
+    ).join("") : '<div class="empty">No data yet</div>';
+  }
+
+  function renderChart(d) {
+    const el = $("chart");
+    const byDay = {};
+    (d.daily || []).forEach(r => { byDay[r.day] = r; });
+    const start = d.from || (d.daily && d.daily[0] && d.daily[0].day);
+    if (!start) { el.innerHTML = '<div class="empty">No views in this range yet</div>'; return; }
+
+    const series = [];
+    for (let dt = new Date(start + "T00:00:00"), end = new Date(d.to + "T00:00:00"); dt <= end; dt.setDate(dt.getDate() + 1)) {
+      const iso = dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0") + "-" + String(dt.getDate()).padStart(2, "0");
+      series.push(byDay[iso] || { day: iso, views: 0, visitors: 0, avg_seconds: 0 });
+    }
+
+    const W = Math.max(280, el.clientWidth), H = 180, padL = 28, padB = 22, padT = 8;
+    const cw = W - padL, ch = H - padB - padT;
+    const maxV = Math.max(1, ...series.map(s => s.views));
+    const step = maxV <= 4 ? 1 : Math.ceil(maxV / 4);
+    const top = step * Math.ceil(maxV / step);
+    const slot = cw / series.length;
+    const gap = slot > 6 ? 2 : 0;
+    const bw = Math.max(1, slot - gap);
+
+    let svg = '<svg viewBox="0 0 ' + W + " " + H + '" height="' + H + '" role="img" aria-label="Views per day">';
+    for (let v = 0; v <= top; v += step) {
+      const y = padT + ch - (v / top) * ch;
+      svg += '<line x1="' + padL + '" x2="' + W + '" y1="' + y + '" y2="' + y + '" stroke="var(--grid)" stroke-width="1"/>' +
+             '<text class="axis" x="' + (padL - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + v + "</text>";
+    }
+    series.forEach((s, i) => {
+      const h = (s.views / top) * ch, x = padL + i * slot + gap / 2, y = padT + ch - h;
+      if (h > 0) {
+        const r = Math.min(4, bw / 2, h);
+        svg += '<path fill="var(--series)" d="M' + x + "," + (padT + ch) + "V" + (y + r) + "Q" + x + "," + y + " " + (x + r) + "," + y +
+               "H" + (x + bw - r) + "Q" + (x + bw) + "," + y + " " + (x + bw) + "," + (y + r) + "V" + (padT + ch) + 'Z"/>';
+      }
+      svg += '<rect class="hit" data-i="' + i + '" x="' + (padL + i * slot) + '" y="' + padT + '" width="' + slot + '" height="' + ch + '" fill="transparent"/>';
+    });
+    const ticks = series.length === 1 ? [0] : [0, Math.floor((series.length - 1) / 2), series.length - 1];
+    ticks.forEach((i, n) => {
+      const x = padL + i * slot + slot / 2;
+      const anchor = series.length === 1 ? "middle" : n === 0 ? "start" : n === ticks.length - 1 ? "end" : "middle";
+      const ax = anchor === "start" ? padL + i * slot : anchor === "end" ? padL + (i + 1) * slot : x;
+      svg += '<text class="axis" x="' + ax + '" y="' + (H - 4) + '" text-anchor="' + anchor + '">' + shortDay(series[i].day) + "</text>";
+    });
+    svg += "</svg>";
+    el.innerHTML = svg + '<div class="tip hidden" id="tip"></div>';
+
+    const tip = $("tip");
+    function show(ev) {
+      const t = ev.target.closest ? ev.target.closest(".hit") : null;
+      if (!t) return;
+      const s = series[+t.dataset.i];
+      tip.innerHTML = "<strong>" + esc(dayLabel(s.day)) + "</strong><br>" + nf(s.views) + " views · " + nf(s.visitors) + " visitors" +
+        (s.views ? "<br>Avg " + dur(s.avg_seconds) : "");
+      const box = el.getBoundingClientRect(), rb = t.getBoundingClientRect();
+      let x = rb.left - box.left + rb.width / 2;
+      x = Math.min(Math.max(x, 70), box.width - 70);
+      tip.style.left = x + "px";
+      tip.style.top = (padT + 2) + "px";
+      tip.classList.remove("hidden");
+    }
+    el.querySelector("svg").addEventListener("mousemove", show);
+    el.querySelector("svg").addEventListener("click", show);
+    el.querySelector("svg").addEventListener("mouseleave", () => tip.classList.add("hidden"));
+  }
+
+  // Events
+  $("pinForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    pin = $("pin").value.trim();
+    if (!pin) return;
+    $("pinBtn").disabled = true; $("pinErr").textContent = "";
+    const ok = await load();
+    $("pinBtn").disabled = false;
+    if (ok) store.set("pbi_stats_pin", pin);
+  });
+  $("refreshBtn").addEventListener("click", load);
+  $("lockBtn").addEventListener("click", () => { store.del("pbi_stats_pin"); pin = null; showLock(""); });
+  $("range").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    days = +b.dataset.days;
+    Array.from($("range").children).forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+    load();
+  });
+  $("report").addEventListener("change", e => { report = e.target.value; load(); });
+  let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => lastData && renderChart(lastData), 150); });
+
+  if (pin) load(); else showLock("");
+})();
+</script>
+</body>
+</html>
