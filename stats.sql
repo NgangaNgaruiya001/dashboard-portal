@@ -81,6 +81,9 @@ begin
   select json_build_object(
     'ok', true,
     'generated_at', now(),
+    'live_now', (select count(*) from public.pbi_sessions
+                  where last_seen_at > now() - interval '45 seconds'
+                    and (p_report is null or report_key = p_report)),
     'from', case when v_from = '-infinity' then null else (v_from at time zone 'Africa/Nairobi')::date end,
     'to', (now() at time zone 'Africa/Nairobi')::date,
     'reports', (select coalesce(json_agg(k order by k), '[]'::json)
@@ -115,7 +118,8 @@ begin
                       from s group by 1) x),
     'recent', (select coalesce(json_agg(x), '[]'::json) from (
                  select started_at, report_key, coalesce(src, 'direct') as src,
-                        device, active_seconds, engaged
+                        device, active_seconds, engaged,
+                        last_seen_at > now() - interval '45 seconds' as live
                    from s order by started_at desc limit 25) x)
   ) into v_result;
 

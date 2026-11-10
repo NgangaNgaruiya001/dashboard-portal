@@ -21,6 +21,7 @@ Not tracked: clicks inside the report (slicers, page tabs). Publish to Web block
 | `schema.sql` | Supabase table, tracking functions, reporting views, read-only Power BI login |
 | `stats.html` | PIN-protected page showing views and time spent |
 | `stats.sql` | Supabase setup for the stats page (PIN and summary function) |
+| `stats-update.sql` | Adds the "viewing now" counter to an existing setup |
 
 ## Live links
 
@@ -47,6 +48,8 @@ To set it up, run `stats.sql` in the Supabase SQL Editor after changing the PIN 
 select public.set_stats_pin('YourNewPin');
 ```
 After 10 wrong PIN attempts the page locks for 10 minutes.
+
+The page refreshes itself every 30 seconds while open, and shows how many people are viewing a dashboard right now (needs `stats-update.sql`, run once).
 
 ## Setup
 
